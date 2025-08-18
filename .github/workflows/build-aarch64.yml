@@ -1,0 +1,57 @@
+name: Build GRUB2 on aarch64
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [arm64]
+    name: Build on ${{ matrix.arch }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for aarch64
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up aarch64 cross-compiler
+        uses: actions/setup-cross-toolchain@v1
+        with:
+          arch: aarch64
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bison flex automake autoconf libtool pkg-config gettext \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu m4
+
+      - name: Configure
+        run: |
+          ./autogen.sh || true
+          ./configure --host=aarch64-linux-gnu --target=aarch64-linux-gnu
+
+      - name: Build GRUB2
+        run: |
+          make -j$(nproc)
+
+      - name: Collect build artifacts
+        run: |
+          mkdir -p build_output
+          cp -r grub-core/*.mod build_output/ || true
+          cp -r grub-core/*.img build_output/ || true
+          cp -r grub-core/*.efi build_output/ || true
+          cp -r grub-core/*.bin build_output/ || true
+          cp -r grub-core/*.o build_output/ || true
+          # 可根据实际需要添加其它产物路径
+          tar czf grub2-aarch64-artifacts.tar.gz build_output
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: grub2-aarch64-artifacts
+          path: grub2-aarch64-artifacts.tar.gz
