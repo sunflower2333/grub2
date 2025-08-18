@@ -21,8 +21,7 @@ jobs:
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu m4 \
             texinfo help2man xz-utils gzip lzop gawk parted recode tar util-linux \
             binutils-doc gcc-13-locales cpp-13-doc cpp-doc gcc-13-doc manpages-dev \
-            gdb-aarch64-linux-gnu gcc-doc autopoint gettext-doc libasprintf-dev \
-            libgettextpo-dev
+            gcc-doc autopoint gettext-doc libasprintf-dev libgettextpo-dev
 
       - name: Bootstrap (pull in gnulib etc.)
         run: |
