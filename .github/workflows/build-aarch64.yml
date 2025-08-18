@@ -1,4 +1,4 @@
-name: Build and Package GRUB2 for aarch64
+name: Build & Package GRUB2 ESP for aarch64
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build-aarch64:
+  build-aarch64-esp:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,30 +24,43 @@ jobs:
             gcc-doc autopoint gettext-doc libasprintf-dev libgettextpo-dev
 
       - name: Bootstrap (pull in gnulib etc.)
-        run: |
-          ./bootstrap
+        run: ./bootstrap
 
-      - name: Configure for aarch64
-        run: |
-          ./configure --host=aarch64-linux-gnu --target=aarch64-linux-gnu
+      - name: Configure for native build
+        run: ./configure --with-platform=efi --target=aarch64 --disable-werror
 
       - name: Build GRUB2
-        run: |
-          make -j$(nproc)
+        run: make -j$(nproc)
 
-      - name: Install GRUB2 to staging directory
+      - name: Install to staging
         run: |
           rm -rf dist
           make DESTDIR=$PWD/dist install
 
-      - name: Package GRUB2 (binaries + modules)
+      - name: Create ESP-like directory and bootaa64.efi
         run: |
-          mkdir -p package
-          cp -r dist/usr/local/* package/
-          tar czf grub2-aarch64-package.tar.gz -C package .
+          mkdir -p esp/EFI/BOOT esp/grub
+          # generate bootaa64.efi
+          ./grub-mkimage -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
+            -p "/grub" \
+            part_gpt part_msdos fat ext2 normal chain linux configfile efi_gop efi_uga boot echo search search_label search_fs_uuid search_fs_file test all_video
+          # copy mods
+          cp -r dist/usr/local/lib/grub/arm64-efi/* esp/grub/
+          # grub.cfg
+          echo 'set timeout=5
+set default=0
+menuentry "GRUB2 AArch64 Test" {
+  linux /vmlinuz
+  initrd /initrd.img
+  boot
+}' > esp/grub/grub.cfg
 
-      - name: Upload packaged GRUB2
+      - name: Archive ESP package
+        run: |
+          tar czf grub2-esp-aarch64.tar.gz -C esp .
+
+      - name: Upload ESP archive
         uses: actions/upload-artifact@v4
         with:
-          name: grub2-aarch64-package
-          path: grub2-aarch64-package.tar.gz
+          name: grub2-esp-aarch64
+          path: grub2-esp-aarch64.tar.gz
