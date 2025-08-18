@@ -1,4 +1,4 @@
-name: Build GRUB2 for aarch64
+name: Build and Package GRUB2 for aarch64
 
 on:
   push:
@@ -35,14 +35,19 @@ jobs:
         run: |
           make -j$(nproc)
 
-      - name: Collect build artifacts
+      - name: Install GRUB2 to staging directory
         run: |
-          mkdir -p build_output
-          find grub-core -name '*.mod' -exec cp {} build_output/ \;
-          tar czf grub2-aarch64-artifacts.tar.gz build_output
+          rm -rf dist
+          make DESTDIR=$PWD/dist install
 
-      - name: Upload build artifacts
+      - name: Package GRUB2 (binaries + modules)
+        run: |
+          mkdir -p package
+          cp -r dist/usr/local/* package/
+          tar czf grub2-aarch64-package.tar.gz -C package .
+
+      - name: Upload packaged GRUB2
         uses: actions/upload-artifact@v4
         with:
-          name: grub2-aarch64-artifacts
-          path: grub2-aarch64-artifacts.tar.gz
+          name: grub2-aarch64-package
+          path: grub2-aarch64-package.tar.gz
