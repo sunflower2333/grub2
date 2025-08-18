@@ -18,11 +18,15 @@ jobs:
           sudo apt-get install -y \
             build-essential \
             bison flex automake autoconf libtool pkg-config gettext \
-            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu m4
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu m4 \
+            texinfo help2man xz-utils gzip lzop gawk parted recode tar util-linux
 
-      - name: Prepare build (autogen/configure)
+      - name: Bootstrap (pull in gnulib etc.)
         run: |
-          if [ -f autogen.sh ]; then ./autogen.sh; fi
+          ./bootstrap
+
+      - name: Configure for aarch64
+        run: |
           ./configure --host=aarch64-linux-gnu --target=aarch64-linux-gnu
 
       - name: Build GRUB2
