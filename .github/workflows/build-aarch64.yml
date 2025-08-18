@@ -1,4 +1,4 @@
-name: Build GRUB2 on aarch64
+name: Build GRUB2 for aarch64
 
 on:
   push:
@@ -6,33 +6,23 @@ on:
   pull_request:
 
 jobs:
-  build:
+  build-aarch64:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        arch: [arm64]
-    name: Build on ${{ matrix.arch }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up QEMU for aarch64
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up aarch64 cross-compiler
-        uses: actions/setup-cross-toolchain@v1
-        with:
-          arch: aarch64
-
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential bison flex automake autoconf libtool pkg-config gettext \
+          sudo apt-get install -y \
+            build-essential \
+            bison flex automake autoconf libtool pkg-config gettext \
             gcc-aarch64-linux-gnu g++-aarch64-linux-gnu m4
 
-      - name: Configure
+      - name: Prepare build (autogen/configure)
         run: |
-          ./autogen.sh || true
+          if [ -f autogen.sh ]; then ./autogen.sh; fi
           ./configure --host=aarch64-linux-gnu --target=aarch64-linux-gnu
 
       - name: Build GRUB2
@@ -42,12 +32,7 @@ jobs:
       - name: Collect build artifacts
         run: |
           mkdir -p build_output
-          cp -r grub-core/*.mod build_output/ || true
-          cp -r grub-core/*.img build_output/ || true
-          cp -r grub-core/*.efi build_output/ || true
-          cp -r grub-core/*.bin build_output/ || true
-          cp -r grub-core/*.o build_output/ || true
-          # 可根据实际需要添加其它产物路径
+          find grub-core -name '*.mod' -exec cp {} build_output/ \;
           tar czf grub2-aarch64-artifacts.tar.gz build_output
 
       - name: Upload build artifacts
