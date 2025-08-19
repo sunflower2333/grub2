@@ -44,7 +44,7 @@ jobs:
           # generate bootaa64.efi
           ./grub-mkimage  --directory="$MODDIR" -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
             -p "/grub" \
-            part_gpt part_msdos fat ext2 normal chain linux configfile efi_gop efi_uga boot echo search search_label search_fs_uuid search_fs_file test all_video
+            part_gpt part_msdos fat ext2 normal chain linux configfile efi_gop boot echo search search_label search_fs_uuid search_fs_file test all_video
           # copy mods
           cp -r dist/usr/local/lib/grub/arm64-efi/* esp/grub/
           # grub.cfg
