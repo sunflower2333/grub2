@@ -40,8 +40,9 @@ jobs:
       - name: Create ESP-like directory and bootaa64.efi
         run: |
           mkdir -p esp/EFI/BOOT esp/grub
+          export MODDIR="$PWD/dist/usr/local/lib/grub/arm64-efi"
           # generate bootaa64.efi
-          ./grub-mkimage  --directory="$PWD/dist/usr/local/grub" -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
+          ./grub-mkimage  --directory="$MODDIR" -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
             -p "/grub" \
             part_gpt part_msdos fat ext2 normal chain linux configfile efi_gop efi_uga boot echo search search_label search_fs_uuid search_fs_file test all_video
           # copy mods
