@@ -48,7 +48,7 @@ jobs:
           # copy mods
           cp -r dist/usr/local/lib/grub/arm64-efi/ esp/boot/grub/
           # grub.cfg
-          echo -e 'set timeout=5\nset default=0\nmenuentry "GRUB2 AArch64 Test" {\n  linux /vmlinuz\n  initrd /initrd.img\n  boot\n}' > esp/grub/grub.cfg
+          echo -e 'set timeout=5\nset default=0\nmenuentry "GRUB2 AArch64 Test" {\n  linux /vmlinuz\n  initrd /initrd.img\n  boot\n}' > esp/boot/grub/grub.cfg
 
       - name: Archive ESP package
         run: |
