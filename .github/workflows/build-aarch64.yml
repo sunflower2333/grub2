@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir -p esp/EFI/BOOT esp/grub
           # generate bootaa64.efi
-          ./grub-mkimage  --directory="$PWR/dist/usr/local/" -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
+          ./grub-mkimage  --directory="$PWD/dist/usr/local/grub" -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
             -p "/grub" \
             part_gpt part_msdos fat ext2 normal chain linux configfile efi_gop efi_uga boot echo search search_label search_fs_uuid search_fs_file test all_video
           # copy mods
