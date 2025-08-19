@@ -39,14 +39,13 @@ jobs:
 
       - name: Create ESP-like directory and bootaa64.efi
         run: |
-          mkdir -p esp/EFI/BOOT esp/grub
+          mkdir -p esp/EFI/BOOT esp/boot/grub/arm64-efi
           export MODDIR="$PWD/dist/usr/local/lib/grub/arm64-efi"
           # generate bootaa64.efi
           ./grub-mkimage  --directory="$MODDIR" -O arm64-efi -o esp/EFI/BOOT/BOOTAA64.EFI \
-            -p "/grub" \
             part_gpt part_msdos fat ext2 normal chain linux configfile efi_gop boot echo search search_label search_fs_uuid search_fs_file test all_video
           # copy mods
-          cp -r dist/usr/local/lib/grub/arm64-efi/* esp/grub/
+          cp -r dist/usr/local/lib/grub/arm64-efi/ esp/boot/grub/
           # grub.cfg
           echo -e 'set timeout=5\nset default=0\nmenuentry "GRUB2 AArch64 Test" {\n  linux /vmlinuz\n  initrd /initrd.img\n  boot\n}' > esp/grub/grub.cfg
 
