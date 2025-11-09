@@ -48,7 +48,7 @@ jobs:
           # copy mods
           cp -r dist/usr/local/lib/grub/arm64-efi/ esp/boot/grub/
           # grub.cfg
-          echo -e 'search --file --set=root /.disk/info \nset prefix=($root)/boot/grub \ninsmod part_acorn \ninsmod part_amiga \ninsmod part_apple \ninsmod part_bsd \ninsmod part_dfly \ninsmod part_dvh \ninsmod part_gpt \ninsmod part_msdos \ninsmod part_plan \ninsmod part_sun \ninsmod part_sunpc \nconfigfile /boot/grub/grub.cfg' > esp/boot/grub/arm64-efi/grub.cfg
+          echo -e 'search --file --set=root /.disk/info \nset prefix=($root)/boot/grub \ninsmod part_gpt \ninsmod part_msdos \ninsmod ext2 \nconfigfile /boot/grub/grub.cfg' > esp/boot/grub/arm64-efi/grub.cfg
           echo -e 'search.fs_uuid 72BC016E-4127-21F1-4961-1DD827D7D325 root \nset prefix=($root)'/boot/grub'\nconfigfile $prefix/grub.cfg' > esp/boot/grub/grub.cfg
 
       - name: Archive ESP package
