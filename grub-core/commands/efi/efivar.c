@@ -30,7 +30,9 @@ GRUB_MOD_LICENSE ("GPLv3+");
 /* Supports specifying GUID via command argument or defaults to
  * GRUB_EFI_GLOBAL_VARIABLE_GUID. Optional --set <env> stores value
  * into a GRUB variable instead of printing. Format options:
- * --string: UTF-16LE to UTF-8 conversion
+ * (default): raw ASCII/UTF-8 string
+ * --hex: hexadecimal bytes (for debugging)
+ * --utf16: UTF-16LE to UTF-8 conversion
  * --uint8/--uint16/--uint32/--uint64: binary integer parsing (little-endian)
  */
 
@@ -42,12 +44,32 @@ typedef struct {
 } simple_guid_t;
 
 typedef enum {
-  FORMAT_STRING,
+  FORMAT_ASCII,
+  FORMAT_UTF16,
+  FORMAT_HEX,
   FORMAT_UINT8,
   FORMAT_UINT16,
   FORMAT_UINT32,
   FORMAT_UINT64
 } output_format_t;
+
+static char *
+ascii_to_string (const grub_uint8_t *data, grub_size_t datasize)
+{
+  /* Treat as raw ASCII/UTF-8, null-terminate */
+  char *out = grub_malloc (datasize + 1);
+  if (!out)
+    return NULL;
+  
+  grub_memcpy (out, data, datasize);
+  out[datasize] = '\0';
+  
+  /* Remove trailing null bytes if any */
+  while (datasize > 0 && out[datasize - 1] == '\0')
+    out[--datasize] = '\0';
+  
+  return out;
+}
 
 static char *
 utf16le_to_utf8 (const grub_uint8_t *data, grub_size_t datasize)
@@ -98,6 +120,30 @@ utf16le_to_utf8 (const grub_uint8_t *data, grub_size_t datasize)
     }
   }
   out[pos] = '\0';
+  return out;
+}
+
+static char *
+format_as_hex (const grub_uint8_t *data, grub_size_t datasize)
+{
+  /* Format as hex bytes with spaces */
+  grub_size_t outlen = datasize ? (datasize * 3 - 1) : 0;
+  char *out;
+  
+  if (outlen == 0)
+    return grub_strdup ("");
+  
+  out = grub_malloc (outlen + 1);
+  if (!out)
+    return NULL;
+  
+  for (grub_size_t i = 0; i < datasize; i++)
+  {
+    grub_snprintf (out + i * 3, 4, "%02x", (unsigned)data[i]);
+    if (i + 1 < datasize)
+      out[i * 3 + 2] = ' ';
+  }
+  out[outlen] = '\0';
   return out;
 }
 
@@ -215,17 +261,18 @@ grub_cmd_efivar (grub_command_t cmd __attribute__ ((unused)),
   int arg_idx = 0;
 
   /* Syntax:
-   * efivar [--string|--uint8|--uint16|--uint32|--uint64] <name> [<guid>]
-   * efivar --set <env> [--string|--uint8|--uint16|--uint32|--uint64] <name> [<guid>]
+   * efivar [--hex|--utf16|--uint8|--uint16|--uint32|--uint64] <name> [<guid>]
+   * efivar --set <env> [--hex|--utf16|--uint8|--uint16|--uint32|--uint64] <name> [<guid>]
+   * Default: raw ASCII/UTF-8 string
    */
   if (argc < 1)
-    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("Usage: efivar [--string|--uintN] <name> [<guid>] | efivar --set <env> [--string|--uintN] <name> [<guid>]"));
+    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("Usage: efivar [--hex|--utf16|--uintN] <name> [<guid>] | efivar --set <env> [--hex|--utf16|--uintN] <name> [<guid>]"));
 
   /* Parse --set option */
   if (grub_strcmp (args[arg_idx], "--set") == 0)
   {
     if (argc < 3)
-      return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("Usage: efivar --set <env> [--string|--uintN] <name> [<guid>]"));
+      return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("Usage: efivar --set <env> [--hex|--utf16|--uintN] <name> [<guid>]"));
     arg_idx++;
     set_env = args[arg_idx++];
   }
@@ -233,9 +280,14 @@ grub_cmd_efivar (grub_command_t cmd __attribute__ ((unused)),
   /* Parse format option */
   if (arg_idx < argc)
   {
-    if (grub_strcmp (args[arg_idx], "--string") == 0)
+    if (grub_strcmp (args[arg_idx], "--utf16") == 0)
     {
-      format = FORMAT_STRING;
+      format = FORMAT_UTF16;
+      arg_idx++;
+    }
+    else if (grub_strcmp (args[arg_idx], "--hex") == 0)
+    {
+      format = FORMAT_HEX;
       arg_idx++;
     }
     else if (grub_strcmp (args[arg_idx], "--uint8") == 0)
@@ -291,9 +343,17 @@ grub_cmd_efivar (grub_command_t cmd __attribute__ ((unused)),
   const grub_uint8_t *p = (const grub_uint8_t *) data;
   char *output = NULL;
 
-  if (format == FORMAT_STRING)
+  if (format == FORMAT_ASCII)
+  {
+    output = ascii_to_string (p, datasize);
+  }
+  else if (format == FORMAT_UTF16)
   {
     output = utf16le_to_utf8 (p, datasize);
+  }
+  else if (format == FORMAT_HEX)
+  {
+    output = format_as_hex (p, datasize);
   }
   else
   {
@@ -326,7 +386,7 @@ static grub_command_t cmd = NULL;
 GRUB_MOD_INIT (efivar)
 {
   cmd = grub_register_command ("efivar", grub_cmd_efivar, NULL,
-                               N_("Read an EFI variable. Usage: efivar [--string|--uint8|--uint16|--uint32|--uint64] <name> [<guid>] | efivar --set <env> [format] <name> [<guid>]"));
+                               N_("Read an EFI variable (default: ASCII string). Usage: efivar [--hex|--utf16|--uint8|--uint16|--uint32|--uint64] <name> [<guid>] | efivar --set <env> [format] <name> [<guid>]"));
 }
 
 GRUB_MOD_FINI (efivar)
