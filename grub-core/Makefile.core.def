@@ -835,6 +835,12 @@ module = {
 };
 
 module = {
+  name = efivar;
+  efi = commands/efi/efivar.c;
+  enable = efi;
+};
+
+module = {
   name = efitextmode;
   efi = commands/efi/efitextmode.c;
   enable = efi;
