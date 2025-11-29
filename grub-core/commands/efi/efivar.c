@@ -24,6 +24,7 @@
 #include <grub/efi/efi.h>
 #include <grub/command.h>
 #include <grub/i18n.h>
+#include <grub/env.h>
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
@@ -252,7 +253,7 @@ grub_cmd_efivar (grub_command_t cmd __attribute__ ((unused)),
   const char *name = NULL;
   const char *guid_str = NULL;
   const char *set_env = NULL;
-  output_format_t format = FORMAT_STRING;
+  output_format_t format = FORMAT_ASCII;
   grub_guid_t guid_local;
   const grub_guid_t *guid = &global;
   grub_size_t datasize = 0;
