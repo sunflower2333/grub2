@@ -829,6 +829,20 @@ module = {
 };
 
 module = {
+  name = rampartition;
+  common = commands/efi/rampartition.c;
+  enable = efi;
+};
+
+module = {
+  name = linuxdirect;
+  arm64 = loader/arm64/linuxdirect.c;
+  arm64 = loader/arm64/linuxdirect_jump.S;
+  enable = arm64_efi;
+  depend = rampartition;
+};
+
+module = {
   name = efifwsetup;
   efi = commands/efi/efifwsetup.c;
   enable = efi;
